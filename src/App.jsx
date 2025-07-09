@@ -1,16 +1,38 @@
 import { useState } from "react";
-
+import { useEffect } from "react";
 import { NewProject } from "./components/NewProject";
 import ProjectSidebar from "./components/ProjectsSidebar";
 import NoProjectSelected from "./components/NoProjectSelected";
 import SelectedProject from "./components/SelectedProject";
 
 function App() {
-  const [projectsState, setProjectsState] = useState({
-    selectedProjectId: undefined,
-    projects: [],
-    tasks: [],
+  const [projectsState, setProjectsState] = useState(() => {
+    try {
+      const storedState = localStorage.getItem("projectManagerState");
+      if (storedState) {
+        const parsed = JSON.parse(storedState);
+        // Fallback in case some fields are missing
+        return {
+          selectedProjectId: parsed.selectedProjectId ?? undefined,
+          projects: parsed.projects ?? [],
+          tasks: parsed.tasks ?? [],
+        };
+      }
+    } catch (error) {
+      console.error("Error reading from localStorage", error);
+    }
+
+    // Fallback default state
+    return {
+      selectedProjectId: undefined,
+      projects: [],
+      tasks: [],
+    };
   });
+  useEffect(() => {
+    localStorage.setItem("projectManagerState", JSON.stringify(projectsState));
+  }, [projectsState]);
+
   function handleAddTask(text) {
     setProjectsState((prevState) => {
       const taskId = Math.random();
@@ -30,9 +52,7 @@ function App() {
     setProjectsState((prevState) => {
       return {
         ...prevState,
-        tasks: prevState.tasks.filter(
-          (task) => task.id !== id
-        ),
+        tasks: prevState.tasks.filter((task) => task.id !== id),
       };
     });
   }
@@ -101,7 +121,7 @@ function App() {
       onDelete={handleDelete}
       onAddTask={handleAddTask}
       onDeleteTask={handleDeleteTask}
-      tasks = {projectsState.tasks}
+      tasks={projectsState.tasks}
     />
   );
   if (projectsState.selectedProjectId === null) {
@@ -125,4 +145,4 @@ function App() {
   );
 }
 
-export default App; 
+export default App;
